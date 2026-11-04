@@ -8,7 +8,8 @@ async function refresh(){
   notice('Loading current data…');
   try {
     const source=$('source').value.trim(); const query=source?'&source_id='+encodeURIComponent(source):'';
-    const [summary,data]=await Promise.all([api('/api/state?view=summary'+query),api('/api/state?view='+currentView+query)]);
+    const [summary,data,mqtt]=await Promise.all([api('/api/state?view=summary'+query),api('/api/state?view='+currentView+query),api('/api/mqtt')]);
+    $('mqttStatus').textContent = `Candidate ${mqtt.candidate_id} · ${mqtt.connected?'Connected':'Disconnected'} | Challenges: ${mqtt.counts.total}, completed: ${mqtt.counts.completed}, failed: ${mqtt.counts.failed} | Last: ${mqtt.last ? mqtt.last.challenge_id+' / '+mqtt.last.status+' / '+mqtt.last.received_at : 'none'} | Error: ${mqtt.last_error || 'none'}`;
     $('stats').replaceChildren();
     for(const [key,label] of labels){ const card=document.createElement('div');card.className='stat';const name=document.createElement('span');name.textContent=label;const value=document.createElement('strong');value.textContent=summary[key];card.append(name,value);$('stats').append(card); }
     const items=currentView==='pending'?data:[...data.events,...data.attempts];

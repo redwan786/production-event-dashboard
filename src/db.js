@@ -11,6 +11,7 @@ function createPool() {
   }
   const ssl = { rejectUnauthorized: true };
   if (process.env.PG_CA_CERT_PATH) ssl.ca = fs.readFileSync(process.env.PG_CA_CERT_PATH, 'utf8');
+  else if (process.env.PG_CA_CERT) ssl.ca = process.env.PG_CA_CERT.replace(/\\n/g, '\n');
   return new Pool({ connectionString: process.env.DATABASE_URL, ssl });
 }
 const pool = createPool();

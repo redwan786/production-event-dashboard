@@ -14,7 +14,7 @@ async function insertEvent(client, e, status, reason) {
     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb)`, [e.event_id,e.source_id,e.type,e.quantity,e.target_event_id,e.event_time,status,reason,JSON.stringify(e)]);
 }
 async function resolvePendingVoids(client, count) {
-  const { rows } = await client.query("SELECT * FROM production_events WHERE target_event_id=$1 AND status='PENDING_REFERENCE' ORDER BY received_at, event_id", [count.event_id]);
+  const { rows } = await client.query("SELECT * FROM production_events WHERE target_event_id=$1 AND status='PENDING_REFERENCE' ORDER BY storage_order", [count.event_id]);
   let reversed = false;
   for (const item of rows) {
     const reason = item.source_id !== count.source_id ? 'Target COUNT has a different source.' : reversed ? 'Target COUNT was already reversed.' : null;
@@ -26,11 +26,7 @@ async function resolvePendingVoids(client, count) {
     }
   }
 }
-async function processOne(raw) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    await lockBusinessChanges(client);
+async function processOneInTransaction(client, raw) {
     const checked = normalizeEvent(raw);
     let status, message, eventId = raw && typeof raw === 'object' && !Array.isArray(raw) && typeof raw.event_id === 'string' ? raw.event_id.trim() : null;
     if (checked.error) { status = 'REJECTED'; message = checked.error; }
@@ -55,15 +51,20 @@ async function processOne(raw) {
         status = reason ? 'REJECTED' : target ? 'ACCEPTED' : 'PENDING_REFERENCE';
         message = reason || (target ? 'VOID processed.' : 'Waiting for target COUNT.');
         await insertEvent(client, e, status, reason);
+        // Existing unresolved corrections can now see this ID is not a COUNT.
+        await client.query("UPDATE production_events SET status='REJECTED', reason='Target must be a COUNT.' WHERE target_event_id=$1 AND status='PENDING_REFERENCE' AND event_id<>$1", [e.event_id]);
         if (status === 'ACCEPTED') await client.query('UPDATE production_events SET reversed_by=$2 WHERE event_id=$1', [e.target_event_id, e.event_id]);
       }
     }
     await recordAttempt(client, raw, status, message);
-    await client.query('COMMIT');
     return { event_id: eventId, status, message };
-  } catch (error) { await client.query('ROLLBACK'); throw error; }
-  finally { client.release(); }
 }
+async function processOne(raw) {
+  const client = await pool.connect();
+  try { await client.query('BEGIN'); await lockBusinessChanges(client); const result = await processOneInTransaction(client, raw); await client.query('COMMIT'); return result; }
+  catch (error) { await client.query('ROLLBACK'); throw error; } finally { client.release(); }
+}
+async function processEventsInTransaction(client, items) { const results=[]; for (const item of items) results.push(await processOneInTransaction(client, item)); return results; }
 // Process and commit each item separately so one invalid item does not undo others.
 async function processEvents(items) { const results = []; for (const item of items) results.push(await processOne(item)); return results; }
-module.exports = { processEvents, lockBusinessChanges };
+module.exports = { processEvents, processEventsInTransaction, lockBusinessChanges };

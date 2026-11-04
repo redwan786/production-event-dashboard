@@ -1,15 +1,15 @@
 const { pool } = require('./db');
 const { lockBusinessChanges } = require('./events');
-async function getSummary(source) {
+async function getSummary(source, db = pool) {
   const p = [source || null];
-  const e = (await pool.query(`SELECT COALESCE(sum(CASE WHEN event_type='COUNT' AND status='ACCEPTED' AND reversed_by IS NULL THEN quantity ELSE 0 END),0)::bigint AS net_total,
-    count(*) FILTER (WHERE status='ACCEPTED')::int AS processed_events,
-    count(*) FILTER (WHERE status='ACCEPTED' AND acknowledged_at IS NULL)::int AS pending_ack,
-    count(*) FILTER (WHERE status='PENDING_REFERENCE')::int AS unresolved
-    FROM production_events WHERE ($1::text IS NULL OR source_id=$1)`, p)).rows[0];
-  const a = (await pool.query(`SELECT count(*) FILTER (WHERE classification='DUPLICATE')::int AS duplicates,
-    count(*) FILTER (WHERE classification='CONFLICT')::int AS conflicts FROM submission_attempts WHERE ($1::text IS NULL OR source_id=$1)`, p)).rows[0];
-  return { ...e, net_total: Number(e.net_total), ...a };
+  const result = await db.query(`SELECT
+    (SELECT COALESCE(sum(CASE WHEN event_type='COUNT' AND status='ACCEPTED' AND reversed_by IS NULL THEN quantity ELSE 0 END),0)::bigint FROM production_events WHERE ($1::text IS NULL OR source_id=$1)) AS net_total,
+    (SELECT count(*)::int FROM production_events WHERE status='ACCEPTED' AND ($1::text IS NULL OR source_id=$1)) AS processed_events,
+    (SELECT count(*)::int FROM production_events WHERE status='ACCEPTED' AND acknowledged_at IS NULL AND ($1::text IS NULL OR source_id=$1)) AS pending_ack,
+    (SELECT count(*)::int FROM production_events WHERE status='PENDING_REFERENCE' AND ($1::text IS NULL OR source_id=$1)) AS unresolved,
+    (SELECT count(*)::int FROM submission_attempts WHERE classification='DUPLICATE' AND ($1::text IS NULL OR source_id=$1)) AS duplicates,
+    (SELECT count(*)::int FROM submission_attempts WHERE classification='CONFLICT' AND ($1::text IS NULL OR source_id=$1)) AS conflicts`,p);
+  return {...result.rows[0], net_total:Number(result.rows[0].net_total)};
 }
 async function getPending(source) {
   return (await pool.query("SELECT event_id,source_id,event_type AS type,quantity,target_event_id,event_time,status FROM production_events WHERE status='ACCEPTED' AND acknowledged_at IS NULL AND ($1::text IS NULL OR source_id=$1) ORDER BY received_at,event_id", [source || null])).rows;

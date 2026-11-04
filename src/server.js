@@ -3,10 +3,12 @@ const express = require('express');
 const { pool } = require('./db');
 const { processEvents } = require('./events');
 const { getSummary, getPending, getExceptions, acknowledge } = require('./state');
+const { startMqtt, getMqttStatus } = require('./mqtt');
 const app = express();
 app.use(express.static(require('node:path').join(__dirname, '../public')));
 app.use(express.json({ limit: '1mb' }));
 app.get('/health', async (req, res) => { try { await pool.query('SELECT 1'); res.json({ ok: true, database: 'connected' }); } catch { res.status(503).json({ ok: false, database: 'unavailable' }); } });
+app.get('/api/mqtt', async (req, res, next) => { try { res.json(await getMqttStatus()); } catch(e) { next(e); } });
 app.post('/api/events', async (req, res, next) => {
   const input = req.body;
   if (!input || typeof input !== 'object') return res.status(400).json({ error: 'Send an event object or an array.' });
@@ -27,4 +29,4 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'The request could not be completed.' });
 });
 const port = Number(process.env.PORT || 3000);
-app.listen(port, '0.0.0.0', () => console.log(`Server listening on port ${port}`));
+app.listen(port, '0.0.0.0', () => { console.log(`Server listening on port ${port}`); startMqtt(); });

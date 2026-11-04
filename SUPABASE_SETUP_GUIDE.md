@@ -8,3 +8,6 @@
 6. Run `npm start` and visit http://localhost:3000/health. A connected response confirms a database query succeeded, not which project you selected. Verify the project reference separately in Supabase. If a connection fails, check host, port, password encoding, TLS CA and network support without sharing secrets.
 
 A deployed Render service can use this same NEW session-pooler connection string via private environment settings; detailed deployment instructions will be added when deployment support is complete.
+
+## Using the same new database on Render
+See RENDER_DEPLOYMENT_GUIDE.md. Enter `DATABASE_URL` and any CA privately in Render's environment settings or secret file; the app enforces certificate verification. Do not assume a Supabase project CA is appropriate for the pooler's separate public certificate chain. Neither the new connection nor Render deployment is verified until you test them.
