@@ -1,6 +1,6 @@
-# Production Event Processing Dashboard — checkpoint 1
+# Production Event Processing Dashboard — checkpoint 2
 
-This is a genuine intermediate checkpoint. It contains the initial PostgreSQL schema, event processing and three REST endpoints. The dashboard, MQTT worker and automated tests are not implemented yet. Do not treat this as the final assessment submission.
+This is a genuine intermediate checkpoint. It contains the initial PostgreSQL schema, event processing and three REST endpoints. The dashboard is implemented; the MQTT worker and automated tests are not implemented yet. Do not treat this as the final assessment submission.
 
 ## Prerequisites
 Windows, Node.js 20 or later, Git, internet, and a NEW Supabase PostgreSQL project. Follow SUPABASE_SETUP_GUIDE.md. Never use an existing traffic-project database. Never commit or share .env or credentials.
@@ -31,3 +31,6 @@ Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/ack -ContentType '
 ```
 
 Send the same COUNT twice to see DUPLICATE. The actual count changes only on the first submission. See REQUIREMENT_DECISIONS.md for unresolved assessment contradictions. MQTT topics, final flow, tests and dashboard instructions will be added in later checkpoints.
+
+## Checkpoint 2 dashboard
+The dashboard is now implemented and served at http://localhost:3000/ after starting the backend. It uses the real APIs, has a source filter, JSON submission, six summary indicators, pending and exceptions views, and selection-based acknowledgements. Browser integration against a real database is not yet verified. MQTT and required tests remain incomplete at this checkpoint.

@@ -4,6 +4,7 @@ const { pool } = require('./db');
 const { processEvents } = require('./events');
 const { getSummary, getPending, getExceptions, acknowledge } = require('./state');
 const app = express();
+app.use(express.static(require('node:path').join(__dirname, '../public')));
 app.use(express.json({ limit: '1mb' }));
 app.get('/health', async (req, res) => { try { await pool.query('SELECT 1'); res.json({ ok: true, database: 'connected' }); } catch { res.status(503).json({ ok: false, database: 'unavailable' }); } });
 app.post('/api/events', async (req, res, next) => {
