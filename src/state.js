@@ -8,7 +8,8 @@ async function getSummary(source, db = pool) {
     (SELECT count(*)::int FROM production_events WHERE status='ACCEPTED' AND acknowledged_at IS NULL AND ($1::text IS NULL OR source_id=$1)) AS pending_ack,
     (SELECT count(*)::int FROM production_events WHERE status='PENDING_REFERENCE' AND ($1::text IS NULL OR source_id=$1)) AS unresolved,
     (SELECT count(*)::int FROM submission_attempts WHERE classification='DUPLICATE' AND ($1::text IS NULL OR source_id=$1)) AS duplicates,
-    (SELECT count(*)::int FROM submission_attempts WHERE classification='CONFLICT' AND ($1::text IS NULL OR source_id=$1)) AS conflicts`,p);
+    (SELECT count(*)::int FROM submission_attempts WHERE classification='CONFLICT' AND ($1::text IS NULL OR source_id=$1)) AS conflicts,
+    (SELECT count(*)::int FROM submission_attempts WHERE classification='REJECTED' AND ($1::text IS NULL OR source_id=$1)) AS rejected_submissions`,p);
   return {...result.rows[0], net_total:Number(result.rows[0].net_total)};
 }
 async function getPending(source) {

@@ -3,7 +3,7 @@
 <body><main class="wrap">
 <header><div><p class="eyebrow">CSI SMART TECH · CANDIDATE 04</p><h1>Production dashboard</h1><p class="muted">Review production events, corrections and exceptions.</p></div><button id="refresh" class="secondary">Refresh data</button></header>
 <div id="notice" role="status" aria-live="polite" class="notice">Loading data…</div>
-<section aria-labelledby="overview"><div class="section-head"><div><p class="eyebrow">LIVE OVERVIEW</p><h2 id="overview">Production summary</h2></div><label>Source filter <input id="source" placeholder="All sources"></label></div><div id="stats" class="stats"></div></section>
+<section aria-labelledby="overview"><div class="section-head"><div><p class="eyebrow">LIVE OVERVIEW</p><h2 id="overview">Production summary</h2></div><div class="source-filter"><label for="source">Production source</label><div class="source-controls"><input id="source" placeholder="All sources"><button id="clearSource" type="button" class="secondary">Clear</button></div></div></div><div id="stats" class="stats"></div></section>
 <div class="grid"><section><p class="eyebrow">EVENT INPUT</p><h2>Submit an event</h2><p class="muted">Paste one JSON object or an array. Change the event ID for a new event.</p><label for="payload">Event JSON</label><textarea id="payload" rows="11" spellcheck="false">{
   "source_id": "LINE-01",
   "event_id": "EV-101",
