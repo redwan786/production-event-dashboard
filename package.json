@@ -1,0 +1,9 @@
+{
+  "name": "production-event-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Production event assessment: checkpoint 1",
+  "scripts": { "start": "node src/server.js", "migrate": "node src/migrate.js", "check": "node --check src/server.js && node --check src/events.js && node --check src/validation.js && node --check src/db.js && node --check src/state.js" },
+  "engines": { "node": ">=20" },
+  "dependencies": { "dotenv": "^16.4.5", "express": "^4.21.2", "pg": "^8.13.1" }
+}
